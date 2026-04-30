@@ -1,3 +1,5 @@
+use core::mem::ManuallyDrop;
+
 use crate::instruction::Instruction;
 use dynamorio_sys::*;
 
@@ -13,10 +15,7 @@ impl InstructionList {
     }
 
     pub fn from_raw(context: *mut core::ffi::c_void, raw: *mut instrlist_t) -> Self {
-        Self {
-            context,
-            raw,
-        }
+        Self { context, raw }
     }
 
     pub fn save_register(
@@ -41,11 +40,23 @@ impl InstructionList {
         }
     }
 
-    pub fn insert_before(
-        &mut self,
-        anchor: &Instruction,
-        instruction: Instruction,
-    ) {
+    /// Returns the first [Instruction] including meta-instructions.
+    pub fn first(&self) -> ManuallyDrop<Instruction> {
+        let instr_raw = unsafe { instrlist_first(self.raw) };
+        let instr = Instruction::from_raw(self.context, instr_raw);
+
+        ManuallyDrop::new(instr)
+    }
+
+    /// Returns the first [Instruction] skipping meta-instructions.
+    pub fn first_app(&self) -> ManuallyDrop<Instruction> {
+        let instr_raw = unsafe { instrlist_first_app(self.raw) };
+        let instr = Instruction::from_raw(self.context, instr_raw);
+
+        ManuallyDrop::new(instr)
+    }
+
+    pub fn insert_before(&mut self, anchor: &Instruction, instruction: Instruction) {
         unsafe {
             instrlist_preinsert(self.raw, anchor.raw, instruction.raw);
         }
@@ -53,11 +64,7 @@ impl InstructionList {
         core::mem::forget(instruction);
     }
 
-    pub fn insert_after(
-        &mut self,
-        anchor: &Instruction,
-        instruction: Instruction,
-    ) {
+    pub fn insert_after(&mut self, anchor: &Instruction, instruction: Instruction) {
         unsafe {
             instrlist_postinsert(self.raw, anchor.raw, instruction.raw);
         }
@@ -65,20 +72,13 @@ impl InstructionList {
         core::mem::forget(instruction);
     }
 
-    pub fn replace(
-        &mut self,
-        old_instruction: &Instruction,
-        instruction: Instruction,
-    ) {
+    pub fn replace(&mut self, old_instruction: &Instruction, instruction: Instruction) {
         unsafe {
             instrlist_replace(self.raw, old_instruction.raw, instruction.raw);
         }
     }
 
-    pub fn remove(
-        &mut self,
-        instruction: &Instruction,
-    ) {
+    pub fn remove(&mut self, instruction: &Instruction) {
         unsafe {
             instrlist_remove(self.raw, instruction.raw);
         }
@@ -105,35 +105,21 @@ impl InstructionList {
     pub fn insert_call_instrumentation(
         &mut self,
         anchor: &Instruction,
-        func: extern "C" fn (usize, usize) -> (),
+        func: extern "C" fn(usize, usize) -> (),
     ) {
-        unsafe {
-            dr_insert_call_instrumentation(
-                self.context,
-                self.raw,
-                anchor.raw,
-                func as _,
-            )
-        }
+        unsafe { dr_insert_call_instrumentation(self.context, self.raw, anchor.raw, func as _) }
     }
 
     pub fn insert_mbr_instrumentation(
         &mut self,
         anchor: &Instruction,
-        func: extern "C" fn (usize, usize) -> (),
+        func: extern "C" fn(usize, usize) -> (),
         spill_slot: dr_spill_slot_t,
     ) {
         unsafe {
-            dr_insert_mbr_instrumentation(
-                self.context,
-                self.raw,
-                anchor.raw,
-                func as _,
-                spill_slot,
-            )
+            dr_insert_mbr_instrumentation(self.context, self.raw, anchor.raw, func as _, spill_slot)
         }
     }
-
 }
 
 impl Drop for InstructionList {
@@ -146,9 +132,7 @@ impl Drop for InstructionList {
 
 impl Clone for InstructionList {
     fn clone(&self) -> Self {
-        let raw = unsafe {
-            instrlist_clone(self.context, self.raw)
-        };
+        let raw = unsafe { instrlist_clone(self.context, self.raw) };
 
         Self {
             context: self.context,
