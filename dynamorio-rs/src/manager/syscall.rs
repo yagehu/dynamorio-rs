@@ -1,6 +1,6 @@
+use crate::closure::Closure;
 use crate::Manager;
 use crate::{AfterSyscallContext, BeforeSyscallContext, Context};
-use crate::closure::Closure;
 use drstd::sync::{Arc, Mutex};
 use dynamorio_sys::*;
 
@@ -20,20 +20,13 @@ unsafe impl<T: SyscallHandler> Sync for RegisteredSyscallHandler<T> {}
 
 impl<T: SyscallHandler> Drop for RegisteredSyscallHandler<T> {
     fn drop(&mut self) {
-        let func: extern "C" fn(*mut core::ffi::c_void, i32) -> i8 = unsafe {
-            core::mem::transmute(self.closure.code())
-        };
+        let func: extern "C" fn(*mut core::ffi::c_void, i32) -> dynamorio_sys::bool_ =
+            unsafe { core::mem::transmute(self.closure.code()) };
 
         unsafe {
-            dr_unregister_filter_syscall_event(
-                Some(func),
-            );
-            drmgr_unregister_pre_syscall_event_user_data(
-                Some(before_syscall_event::<T>),
-            );
-            drmgr_unregister_post_syscall_event_user_data(
-                Some(after_syscall_event::<T>),
-            );
+            dr_unregister_filter_syscall_event(Some(func));
+            drmgr_unregister_pre_syscall_event_user_data(Some(before_syscall_event::<T>));
+            drmgr_unregister_post_syscall_event_user_data(Some(after_syscall_event::<T>));
         }
     }
 }
@@ -57,16 +50,16 @@ extern "C" fn before_syscall_event<T: SyscallHandler>(
     context: *mut core::ffi::c_void,
     sysnum: i32,
     user_data: *mut core::ffi::c_void,
-) -> i8 {
+) -> dynamorio_sys::bool_ {
     let mut context = BeforeSyscallContext::from_raw(context);
     let handler = unsafe { &*(user_data as *mut Mutex<T>) };
-    let mut result = 0;
+    let mut result = false;
 
     if let Ok(mut handler) = handler.lock() {
-        result = handler.before_syscall(&mut context, sysnum) as i8;
+        result = handler.before_syscall(&mut context, sysnum);
     }
 
-    result
+    result as dynamorio_sys::bool_
 }
 
 extern "C" fn after_syscall_event<T: SyscallHandler>(
@@ -84,13 +77,8 @@ extern "C" fn after_syscall_event<T: SyscallHandler>(
 
 impl Manager {
     #[cfg(target_os = "windows")]
-    pub fn decode_sysnum_from_wrapper(
-        &self,
-        entry: usize,
-    ) -> Option<u32> {
-        let result = unsafe {
-            drmgr_decode_sysnum_from_wrapper(entry)
-        };
+    pub fn decode_sysnum_from_wrapper(&self, entry: usize) -> Option<u32> {
+        let result = unsafe { drmgr_decode_sysnum_from_wrapper(entry) };
 
         if result < 0 {
             return None;
@@ -111,9 +99,8 @@ impl Manager {
             Arc::as_ptr(&handler) as *mut core::ffi::c_void,
         );
 
-        let func: extern "C" fn(*mut core::ffi::c_void, i32) -> i8 = unsafe {
-            core::mem::transmute(closure.code())
-        };
+        let func: extern "C" fn(*mut core::ffi::c_void, i32) -> dynamorio_sys::bool_ =
+            unsafe { core::mem::transmute(closure.code()) };
 
         unsafe {
             dr_register_filter_syscall_event(Some(func));

@@ -23,9 +23,7 @@ impl Symbols {
     ) -> Option<String> {
         let mut name = vec![0i8; 256];
         let mut file_name = vec![0i8; 256];
-        let mut sym_info: drsym_info_t = unsafe {
-            core::mem::zeroed()
-        };
+        let mut sym_info: drsym_info_t = unsafe { core::mem::zeroed() };
 
         sym_info.struct_size = core::mem::size_of::<drsym_info_t>();
         sym_info.name = name.as_mut_ptr();
@@ -33,14 +31,8 @@ impl Symbols {
         sym_info.file = file_name.as_mut_ptr();
         sym_info.file_size = file_name.len() as _;
 
-        let result = unsafe {
-            drsym_lookup_address(
-                path.as_ptr() as _,
-                offset,
-                &mut sym_info,
-                flags.0,
-            )
-        };
+        let result =
+            unsafe { drsym_lookup_address(path.as_ptr() as _, offset, &mut sym_info, flags.0) };
 
         if result != drsym_error_t::DRSYM_SUCCESS {
             return None;
@@ -48,9 +40,9 @@ impl Symbols {
 
         unsafe {
             CStr::from_ptr(sym_info.name)
-                 .to_str()
-                 .map(|s| s.to_owned())
-                 .ok()
+                .to_str()
+                .map(|s| s.to_owned())
+                .ok()
         }
     }
 }
