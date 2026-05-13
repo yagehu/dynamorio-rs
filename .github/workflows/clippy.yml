@@ -16,10 +16,18 @@ jobs:
       matrix:
         toolchain:
           - nightly
-
     steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - name: Run clippy
-      run: cargo clippy
+      - name: Install package
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake clang
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            components: clippy
+            override: true
+      - name: Run clippy
+        run: cargo clippy
