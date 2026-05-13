@@ -24,10 +24,7 @@ impl Extension {
         Self
     }
 
-    pub fn register_soft_kills(
-        &self,
-        func: fn(pid: process_id_t, exit_code: i32) -> bool,
-    ) {
+    pub fn register_soft_kills(&self, func: fn(pid: process_id_t, exit_code: i32) -> bool) {
         SOFT_KILLS_HANDLER.store(Some(func), Ordering::Relaxed);
 
         unsafe {

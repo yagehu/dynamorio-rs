@@ -1,6 +1,6 @@
+use dynamorio_sys::*;
 #[cfg(feature = "io")]
 pub use no_std_io::io::{Cursor, Read, Seek, SeekFrom, Write};
-use dynamorio_sys::*;
 
 #[doc(hidden)]
 pub fn _print(args: core::fmt::Arguments) {

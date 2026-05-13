@@ -8,59 +8,40 @@ pub struct Operand {
 
 impl PartialEq for Operand {
     fn eq(&self, other: &Operand) -> bool {
-        unsafe {
-            opnd_same(self.raw, other.raw) != 0
-        }
+        unsafe { opnd_same(self.raw, other.raw) != 0 }
     }
 }
 
 impl Operand {
     pub fn new_register(register: reg_id_t) -> Self {
-        let raw = unsafe {
-            opnd_create_reg(register)
-        };
+        let raw = unsafe { opnd_create_reg(register) };
 
-        Self {
-            raw,
-        }
+        Self { raw }
     }
 
     pub fn new_immediate(value: u64, operand_size: opnd_size_t) -> Self {
-        let raw = unsafe {
-            opnd_create_immed_uint(value, operand_size)
-        };
+        let raw = unsafe { opnd_create_immed_uint(value, operand_size) };
 
-        Self {
-            raw,
-        }
+        Self { raw }
     }
 
     pub fn new_memptr(base: reg_id_t, displacement: i32) -> Self {
-        let raw = unsafe {
-            opnd_create_base_disp(base, DR_REG_NULL as _, 0, displacement, OPSZ_8 as _)
-        };
+        let raw =
+            unsafe { opnd_create_base_disp(base, DR_REG_NULL as _, 0, displacement, OPSZ_8 as _) };
 
-        Self {
-            raw,
-        }
+        Self { raw }
     }
 
     pub fn is_memory_reference(&self) -> bool {
-        unsafe {
-            opnd_is_memory_reference(self.raw) != 0
-        }
+        unsafe { opnd_is_memory_reference(self.raw) != 0 }
     }
 
     pub fn displacement(&self) -> i32 {
-        unsafe {
-            opnd_get_disp(self.raw)
-        }
+        unsafe { opnd_get_disp(self.raw) }
     }
 
     pub fn register(&self) -> Option<reg_id_t> {
-        let register = unsafe {
-            opnd_get_reg(self.raw)
-        };
+        let register = unsafe { opnd_get_reg(self.raw) };
 
         if register == DR_REG_NULL as u16 {
             return None;
@@ -70,9 +51,7 @@ impl Operand {
     }
 
     pub fn segment(&self) -> Option<reg_id_t> {
-        let register = unsafe {
-            opnd_get_segment(self.raw)
-        };
+        let register = unsafe { opnd_get_segment(self.raw) };
 
         if register == DR_REG_NULL as u16 {
             return None;
@@ -103,15 +82,11 @@ impl<'a> Iterator for SourceOperandIter<'a> {
             return None;
         }
 
-        let raw = unsafe {
-            instr_get_src(self.instruction.raw, self.index as _)
-        };
+        let raw = unsafe { instr_get_src(self.instruction.raw, self.index as _) };
 
         self.index += 1;
 
-        Some(Operand {
-            raw,
-        })
+        Some(Operand { raw })
     }
 }
 
@@ -130,14 +105,10 @@ impl<'a> Iterator for TargetOperandIter<'a> {
             return None;
         }
 
-        let raw = unsafe {
-            instr_get_dst(self.instruction.raw, self.index as _)
-        };
+        let raw = unsafe { instr_get_dst(self.instruction.raw, self.index as _) };
 
         self.index += 1;
 
-        Some(Operand {
-            raw,
-        })
+        Some(Operand { raw })
     }
 }

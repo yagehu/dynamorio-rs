@@ -20,12 +20,13 @@ use crate::path::Path;
 pub fn create_dir<P: AsRef<Path>>(path: P) -> Result<(), no_std_io::io::Error> {
     let path = CString::new(path.as_ref().to_string_lossy().as_ref()).unwrap();
 
-    let result = unsafe {
-        dr_create_dir(path.as_ptr()) != 0
-    };
+    let result = unsafe { dr_create_dir(path.as_ptr()) != 0 };
 
     if !result {
-        return Err(no_std_io::io::Error::new(no_std_io::io::ErrorKind::Other, "unknown"));
+        return Err(no_std_io::io::Error::new(
+            no_std_io::io::ErrorKind::Other,
+            "unknown",
+        ));
     }
 
     Ok(())
@@ -55,12 +56,13 @@ pub fn read_to_string<P: AsRef<Path>>(path: P) -> Result<String, no_std_io::io::
 pub fn remove_dir<P: AsRef<Path>>(path: P) -> Result<(), no_std_io::io::Error> {
     let path = CString::new(path.as_ref().to_string_lossy().as_ref()).unwrap();
 
-    let result = unsafe {
-        dr_delete_dir(path.as_ptr()) != 0
-    };
+    let result = unsafe { dr_delete_dir(path.as_ptr()) != 0 };
 
     if !result {
-        return Err(no_std_io::io::Error::new(no_std_io::io::ErrorKind::Other, "unknown"));
+        return Err(no_std_io::io::Error::new(
+            no_std_io::io::ErrorKind::Other,
+            "unknown",
+        ));
     }
 
     Ok(())
@@ -73,12 +75,13 @@ pub fn remove_dir<P: AsRef<Path>>(path: P) -> Result<(), no_std_io::io::Error> {
 pub fn remove_file<P: AsRef<Path>>(path: P) -> Result<(), no_std_io::io::Error> {
     let path = CString::new(path.as_ref().to_string_lossy().as_ref()).unwrap();
 
-    let result = unsafe {
-        dr_delete_file(path.as_ptr()) != 0
-    };
+    let result = unsafe { dr_delete_file(path.as_ptr()) != 0 };
 
     if !result {
-        return Err(no_std_io::io::Error::new(no_std_io::io::ErrorKind::Other, "unknown"));
+        return Err(no_std_io::io::Error::new(
+            no_std_io::io::ErrorKind::Other,
+            "unknown",
+        ));
     }
 
     Ok(())
@@ -91,12 +94,14 @@ pub fn rename<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> Result<(), no_s
     let from = CString::new(from.as_ref().to_string_lossy().as_ref()).unwrap();
     let to = CString::new(to.as_ref().to_string_lossy().as_ref()).unwrap();
 
-    let result = unsafe {
-        dr_rename_file(from.as_ptr(), to.as_ptr(), true as i8) != 0
-    };
+    let result =
+        unsafe { dr_rename_file(from.as_ptr(), to.as_ptr(), true as dynamorio_sys::bool_) != 0 };
 
     if !result {
-        return Err(no_std_io::io::Error::new(no_std_io::io::ErrorKind::Other, "unknown"));
+        return Err(no_std_io::io::Error::new(
+            no_std_io::io::ErrorKind::Other,
+            "unknown",
+        ));
     }
 
     Ok(())

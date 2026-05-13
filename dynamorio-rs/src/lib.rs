@@ -35,11 +35,7 @@ use dynamorio_sys::*;
 pub use paste::paste;
 
 pub use context::{AfterSyscallContext, BeforeSyscallContext, Context};
-pub use dynamorio_sys::{
-    dr_emit_flags_t,
-    dr_spill_slot_t,
-    process_id_t,
-};
+pub use dynamorio_sys::{dr_emit_flags_t, dr_spill_slot_t, process_id_t};
 pub use event::*;
 pub use instruction::Instruction;
 pub use instruction_list::InstructionList;
@@ -71,41 +67,26 @@ pub static _USES_DR_VERSION_: i32 = dynamorio_sys::_USES_DR_VERSION_;
 /// We need to define `_DR_CLIENT_AVX512_CODE_IN_USE` as DynamoRIO checks this symbol to determine
 /// whether AVX-512 is being used or not.
 #[no_mangle]
-pub static _DR_CLIENT_AVX512_CODE_IN_USE: i8 = dynamorio_sys::_DR_CLIENT_AVX512_CODE_IN_USE_;
+pub static _DR_CLIENT_AVX512_CODE_IN_USE: dynamorio_sys::bool_ =
+    dynamorio_sys::_DR_CLIENT_AVX512_CODE_IN_USE_;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ClientId(pub client_id_t);
 
 #[linkage = "weak"]
 #[no_mangle]
-fn client_main(_id: ClientId, _args: &[&str]) {
-}
+fn client_main(_id: ClientId, _args: &[&str]) {}
 
 #[no_mangle]
-fn dr_client_main(
-    id: client_id_t, 
-    argc: i32,
-    argv: *const *const i8,
-) {
+fn dr_client_main(id: client_id_t, argc: i32, argv: *const *const core::ffi::c_char) {
     let id = ClientId(id);
-    let args = unsafe {
-        core::slice::from_raw_parts(
-            argv,
-            argc as _,
-        )
-    };
+    let args = unsafe { core::slice::from_raw_parts(argv, argc as _) };
 
     let args: Vec<String> = args
         .iter()
-        .map(|arg| unsafe { CStr::from_ptr(*arg) }
-             .to_str()
-             .unwrap()
-             .to_owned())
+        .map(|arg| unsafe { CStr::from_ptr(*arg) }.to_str().unwrap().to_owned())
         .collect();
-    let args: Vec<&str> = args
-        .iter()
-        .map(|arg| &**arg)
-        .collect();
+    let args: Vec<&str> = args.iter().map(|arg| &**arg).collect();
 
     client_main(id, &args);
 }

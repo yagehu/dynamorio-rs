@@ -1,7 +1,7 @@
-use crate::{Context, Instruction, InstructionList, Manager};
 use crate::closure::Closure;
-use dynamorio_sys::*;
+use crate::{Context, Instruction, InstructionList, Manager};
 use drstd::sync::{Arc, Mutex};
+use dynamorio_sys::*;
 
 pub trait BasicBlockHandler {
     fn analyse(
@@ -86,43 +86,65 @@ unsafe impl<T: BasicBlockHandler> Sync for RegisteredBasicBlockHandler<T> {}
 
 impl<T: BasicBlockHandler> Drop for RegisteredBasicBlockHandler<T> {
     fn drop(&mut self) {
-        let bb_analysis_wrapper: extern "C" fn(*mut core::ffi::c_void, *mut core::ffi::c_void, *mut instrlist_t, i8, i8, *mut *mut core::ffi::c_void) -> dr_emit_flags_t = unsafe {
-            core::mem::transmute(self.bb_analysis_closure.code())
-        };
+        let bb_analysis_wrapper: extern "C" fn(
+            *mut core::ffi::c_void,
+            *mut core::ffi::c_void,
+            *mut instrlist_t,
+            dynamorio_sys::bool_,
+            dynamorio_sys::bool_,
+            *mut *mut core::ffi::c_void,
+        ) -> dr_emit_flags_t = unsafe { core::mem::transmute(self.bb_analysis_closure.code()) };
 
         unsafe {
-            drmgr_unregister_bb_instrumentation_event(
-                Some(bb_analysis_wrapper),
-            );
+            drmgr_unregister_bb_instrumentation_event(Some(bb_analysis_wrapper));
         }
     }
 }
 
 impl Manager {
-    pub fn instrument_basic_block<T: BasicBlockHandler>(&self, handler: &Arc<Mutex<T>>) -> RegisteredBasicBlockHandler<T> {
+    pub fn instrument_basic_block<T: BasicBlockHandler>(
+        &self,
+        handler: &Arc<Mutex<T>>,
+    ) -> RegisteredBasicBlockHandler<T> {
         let bb_analysis_closure = Closure::new(
             6,
             unsafe {
-                core::mem::transmute(bb_analysis_event::<T> as unsafe extern "C" fn(_, _, _, _, _, _, _) -> _)
+                core::mem::transmute(
+                    bb_analysis_event::<T> as unsafe extern "C" fn(_, _, _, _, _, _, _) -> _,
+                )
             },
             Arc::as_ptr(&handler) as *mut core::ffi::c_void,
         );
 
-        let bb_analysis_wrapper: extern "C" fn(*mut core::ffi::c_void, *mut core::ffi::c_void, *mut instrlist_t, i8, i8, *mut *mut core::ffi::c_void) -> dr_emit_flags_t = unsafe {
-            core::mem::transmute(bb_analysis_closure.code())
-        };
+        let bb_analysis_wrapper: extern "C" fn(
+            *mut core::ffi::c_void,
+            *mut core::ffi::c_void,
+            *mut instrlist_t,
+            dynamorio_sys::bool_,
+            dynamorio_sys::bool_,
+            *mut *mut core::ffi::c_void,
+        ) -> dr_emit_flags_t = unsafe { core::mem::transmute(bb_analysis_closure.code()) };
 
         let bb_instrumentation_closure = Closure::new(
             7,
             unsafe {
-                core::mem::transmute(bb_instrumentation_event::<T> as unsafe extern "C" fn(_, _, _, _, _, _, _, _) -> _)
+                core::mem::transmute(
+                    bb_instrumentation_event::<T>
+                        as unsafe extern "C" fn(_, _, _, _, _, _, _, _) -> _,
+                )
             },
             Arc::as_ptr(&handler) as *mut core::ffi::c_void,
         );
 
-        let bb_instrumentation_wrapper: extern "C" fn(*mut core::ffi::c_void, *mut core::ffi::c_void, *mut instrlist_t, *mut instr_t, i8, i8, *mut core::ffi::c_void) -> dr_emit_flags_t = unsafe {
-            core::mem::transmute(bb_instrumentation_closure.code())
-        };
+        let bb_instrumentation_wrapper: extern "C" fn(
+            *mut core::ffi::c_void,
+            *mut core::ffi::c_void,
+            *mut instrlist_t,
+            *mut instr_t,
+            dynamorio_sys::bool_,
+            dynamorio_sys::bool_,
+            *mut core::ffi::c_void,
+        ) -> dr_emit_flags_t = unsafe { core::mem::transmute(bb_instrumentation_closure.code()) };
 
         unsafe {
             drmgr_register_bb_instrumentation_event(

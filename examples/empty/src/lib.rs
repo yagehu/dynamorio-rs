@@ -18,7 +18,10 @@ impl ExitHandler for Client {
 
 #[no_mangle]
 fn client_main(_id: ClientId, _args: &[&str]) {
-    set_client_name("empty", "https://github.com/StephanvanSchaik/dynamorio-rs/issues");
+    set_client_name(
+        "empty",
+        "https://github.com/StephanvanSchaik/dynamorio-rs/issues",
+    );
 
     CLIENT.call_once(|| {
         let client = Arc::new(Mutex::new(Client {

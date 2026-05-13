@@ -1,9 +1,9 @@
 use alloc::ffi::CString;
 use dynamorio_sys::*;
 
-use no_std_io::io::Error;
 use crate::io::{Read, Seek, SeekFrom, Write};
 use crate::path::Path;
+use no_std_io::io::Error;
 
 pub struct OpenOptions {
     read: bool,
@@ -100,17 +100,16 @@ impl OpenOptions {
             flags |= DR_FILE_WRITE_REQUIRE_NEW;
         }
 
-        let inner = unsafe {
-            dr_open_file(path.as_ptr(), flags)
-        };
+        let inner = unsafe { dr_open_file(path.as_ptr(), flags) };
 
         if inner == INVALID_FILE {
-            return Err(no_std_io::io::Error::new(no_std_io::io::ErrorKind::Other, "unknown"));
+            return Err(no_std_io::io::Error::new(
+                no_std_io::io::ErrorKind::Other,
+                "unknown",
+            ));
         }
 
-        Ok(File {
-            inner,
-        })
+        Ok(File { inner })
     }
 }
 
@@ -130,7 +129,11 @@ impl File {
     ///
     /// See the [`OpenOptions::open`] function for more details.
     pub fn create<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
-        File::options().create(true).truncate(true).write(true).open(path)
+        File::options()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(path)
     }
 
     /// Returns a new `OpenOptions` object.
@@ -149,24 +152,27 @@ impl File {
     }
 
     pub fn try_clone(&self) -> Result<Self, Error> {
-        let inner = unsafe {
-            dr_dup_file_handle(self.inner)
-        };
+        let inner = unsafe { dr_dup_file_handle(self.inner) };
 
-        Ok(Self {
-            inner,
-        })
+        Ok(Self { inner })
     }
 }
 
 impl Read for File {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, no_std_io::io::Error> {
         let result = unsafe {
-            dr_read_file(self.inner, buf.as_mut_ptr() as *mut core::ffi::c_void, buf.len())
+            dr_read_file(
+                self.inner,
+                buf.as_mut_ptr() as *mut core::ffi::c_void,
+                buf.len(),
+            )
         };
 
         if result < 0 {
-            return Err(no_std_io::io::Error::new(no_std_io::io::ErrorKind::Other, "unknown"));
+            return Err(no_std_io::io::Error::new(
+                no_std_io::io::ErrorKind::Other,
+                "unknown",
+            ));
         }
 
         Ok(result as usize)
@@ -176,11 +182,18 @@ impl Read for File {
 impl Write for File {
     fn write(&mut self, buf: &[u8]) -> Result<usize, no_std_io::io::Error> {
         let result = unsafe {
-            dr_write_file(self.inner, buf.as_ptr() as *const core::ffi::c_void, buf.len())
+            dr_write_file(
+                self.inner,
+                buf.as_ptr() as *const core::ffi::c_void,
+                buf.len(),
+            )
         };
 
         if result < 0 {
-            return Err(no_std_io::io::Error::new(no_std_io::io::ErrorKind::Other, "unknown"));
+            return Err(no_std_io::io::Error::new(
+                no_std_io::io::ErrorKind::Other,
+                "unknown",
+            ));
         }
 
         Ok(result as usize)
@@ -198,22 +211,21 @@ impl Write for File {
 impl Seek for File {
     fn seek(&mut self, pos: SeekFrom) -> Result<u64, no_std_io::io::Error> {
         let (offset, origin) = match pos {
-            SeekFrom::Start(offset)   => (offset as _, DR_SEEK_SET),
-            SeekFrom::End(offset)     => (offset as _, DR_SEEK_END),
+            SeekFrom::Start(offset) => (offset as _, DR_SEEK_SET),
+            SeekFrom::End(offset) => (offset as _, DR_SEEK_END),
             SeekFrom::Current(offset) => (offset as _, DR_SEEK_CUR),
         };
 
-        let result = unsafe {
-            dr_file_seek(self.inner, offset, origin as i32) != 0
-        };
+        let result = unsafe { dr_file_seek(self.inner, offset, origin as i32) != 0 };
 
         if !result {
-            return Err(no_std_io::io::Error::new(no_std_io::io::ErrorKind::Other, "unknown"));
+            return Err(no_std_io::io::Error::new(
+                no_std_io::io::ErrorKind::Other,
+                "unknown",
+            ));
         }
 
-        let result = unsafe {
-            dr_file_tell(self.inner)
-        };
+        let result = unsafe { dr_file_tell(self.inner) };
 
         Ok(result as u64)
     }

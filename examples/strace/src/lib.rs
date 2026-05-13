@@ -6,8 +6,8 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
-use drstd::*;
 use drstd::sync::{Arc, Mutex, Once};
+use drstd::*;
 use dynamorio_rs::*;
 use syscalls::Sysno;
 
@@ -28,7 +28,8 @@ impl SyscallHandler for Client {
         let sysno = Sysno::from(sysnum);
 
         self.sysno = Some(sysno);
-        self.arguments = sysno.arguments()
+        self.arguments = sysno
+            .arguments()
             .iter()
             .enumerate()
             .map(|(i, _argument)| unsafe { context.param(i) })
@@ -43,20 +44,29 @@ impl SyscallHandler for Client {
             _ => return,
         };
 
-        let arguments = self.arguments
+        let arguments = self
+            .arguments
             .iter()
             .map(|argument| format!("0x{argument:x}"))
             .collect::<Vec<String>>()
             .join(", ");
 
-        println!("{}({}) = 0x{:x}", sysno.name(), arguments, context.get_result());
+        println!(
+            "{}({}) = 0x{:x}",
+            sysno.name(),
+            arguments,
+            context.get_result()
+        );
     }
 }
 
 #[no_mangle]
 fn client_main(_id: ClientId, _args: &[&str]) {
     let manager = Manager::new();
-    set_client_name("strace", "https://github.com/StephanvanSchaik/dynamorio-rs/issues");
+    set_client_name(
+        "strace",
+        "https://github.com/StephanvanSchaik/dynamorio-rs/issues",
+    );
 
     CLIENT.call_once(|| {
         let client = Arc::new(Mutex::new(Client {

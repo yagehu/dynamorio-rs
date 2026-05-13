@@ -14,15 +14,11 @@ pub struct RegisteredThreadHandler<T: ThreadHandler> {
 impl<T: ThreadHandler> Drop for RegisteredThreadHandler<T> {
     fn drop(&mut self) {
         unsafe {
-            drmgr_unregister_thread_init_event_user_data(
-                Some(thread_init_event::<T>),
-            );
+            drmgr_unregister_thread_init_event_user_data(Some(thread_init_event::<T>));
         }
 
         unsafe {
-            drmgr_unregister_thread_exit_event_user_data(
-                Some(thread_exit_event::<T>),
-            );
+            drmgr_unregister_thread_exit_event_user_data(Some(thread_exit_event::<T>));
         }
     }
 }

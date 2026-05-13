@@ -43,9 +43,7 @@ unsafe impl<T: ?Sized + Send + Sync> Sync for Mutex<T> {}
 
 impl<T> Mutex<T> {
     pub fn new(data: T) -> Self {
-        let inner = unsafe {
-            dr_mutex_create()
-        };
+        let inner = unsafe { dr_mutex_create() };
 
         Self {
             inner,
@@ -54,17 +52,13 @@ impl<T> Mutex<T> {
     }
 
     pub fn try_lock(&self) -> Result<MutexGuard<'_, T>, Error> {
-        let result = unsafe {
-            dr_mutex_trylock(self.inner) != 0
-        };
+        let result = unsafe { dr_mutex_trylock(self.inner) != 0 };
 
         if !result {
             return Err(Error::WouldBlock);
         }
 
-        Ok(MutexGuard {
-            lock: self,
-        })
+        Ok(MutexGuard { lock: self })
     }
 
     pub fn lock(&self) -> Result<MutexGuard<'_, T>, Error> {
@@ -72,9 +66,7 @@ impl<T> Mutex<T> {
             dr_mutex_lock(self.inner);
         }
 
-        Ok(MutexGuard {
-            lock: self,
-        })
+        Ok(MutexGuard { lock: self })
     }
 }
 

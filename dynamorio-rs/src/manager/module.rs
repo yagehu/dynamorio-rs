@@ -14,15 +14,11 @@ pub struct RegisteredModuleHandler<T: ModuleHandler> {
 impl<T: ModuleHandler> Drop for RegisteredModuleHandler<T> {
     fn drop(&mut self) {
         unsafe {
-            drmgr_unregister_module_load_event_user_data(
-                Some(module_load_event::<T>),
-            );
+            drmgr_unregister_module_load_event_user_data(Some(module_load_event::<T>));
         }
 
         unsafe {
-            drmgr_unregister_module_unload_event_user_data(
-                Some(module_unload_event::<T>),
-            );
+            drmgr_unregister_module_unload_event_user_data(Some(module_unload_event::<T>));
         }
     }
 }
@@ -30,7 +26,7 @@ impl<T: ModuleHandler> Drop for RegisteredModuleHandler<T> {
 extern "C" fn module_load_event<T: ModuleHandler>(
     context: *mut core::ffi::c_void,
     module: *const module_data_t,
-    loaded: i8,
+    loaded: dynamorio_sys::bool_,
     user_data: *mut core::ffi::c_void,
 ) {
     let mut module = ModuleData::from_raw(module as _);

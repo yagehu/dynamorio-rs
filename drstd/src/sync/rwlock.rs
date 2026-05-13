@@ -65,9 +65,7 @@ unsafe impl<T: ?Sized + Send + Sync> Sync for RwLock<T> {}
 
 impl<T> RwLock<T> {
     pub fn new(data: T) -> Self {
-        let inner = unsafe {
-            dr_rwlock_create()
-        };
+        let inner = unsafe { dr_rwlock_create() };
 
         Self {
             inner,
@@ -84,23 +82,17 @@ impl<T> RwLock<T> {
             dr_rwlock_read_lock(self.inner);
         }
 
-        Ok(RwLockReadGuard {
-            lock: self,
-        })
+        Ok(RwLockReadGuard { lock: self })
     }
 
     pub fn try_write(&self) -> Result<RwLockWriteGuard<'_, T>, Error> {
-        let result = unsafe {
-            dr_rwlock_write_trylock(self.inner) != 0
-        };
+        let result = unsafe { dr_rwlock_write_trylock(self.inner) != 0 };
 
         if !result {
             return Err(Error::WouldBlock);
         }
 
-        Ok(RwLockWriteGuard {
-            lock: self,
-        })
+        Ok(RwLockWriteGuard { lock: self })
     }
 
     pub fn write(&self) -> Result<RwLockWriteGuard<'_, T>, Error> {
@@ -108,9 +100,7 @@ impl<T> RwLock<T> {
             dr_rwlock_write_lock(self.inner);
         }
 
-        Ok(RwLockWriteGuard {
-            lock: self,
-        })
+        Ok(RwLockWriteGuard { lock: self })
     }
 }
 

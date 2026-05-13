@@ -2,7 +2,8 @@ use atomic::{Atomic, Ordering};
 use core::alloc::{GlobalAlloc, Layout};
 use dynamorio_sys::*;
 
-pub static MALLOC: Atomic<Option<extern "C" fn(usize) -> *mut core::ffi::c_void>> = Atomic::new(None);
+pub static MALLOC: Atomic<Option<extern "C" fn(usize) -> *mut core::ffi::c_void>> =
+    Atomic::new(None);
 pub static FREE: Atomic<Option<extern "C" fn(*mut core::ffi::c_void)>> = Atomic::new(None);
 
 pub struct Allocator;
